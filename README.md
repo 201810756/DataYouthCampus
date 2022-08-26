@@ -22,6 +22,13 @@
   * [2-1. 결측치 처리 및 설립일자 이상치 제거](#결측치-처리-및-설립일자-이상치-제거)
   * [2-2. feature 보정 및 데이터 선정](#feature-보정-및-데이터-선정)
 * [3. 모델링](#모델링)
+  * [3-1. 재무 feature와 비재무 feature 결합 모델링](#재무-feature와-비재무-feature-결합-모델링)
+    * [3-1-1. 상관관계 높은 개별 feature에 pca](#상관관계-높은-개별-feature에-pca)
+    * [3-1-2. 로지스틱 모델링](#로지스틱-모델링)
+    * [3-1-3. svm](#svm)
+    * [3-1-4. 의사결정트리](#의사결정트리)
+    * [3-1-5. knn](#knn)
+    * [3-1-6. 앙상블_보팅](#앙상블_보팅)
 
 
 ## 데이터 수집
@@ -1651,3 +1658,586 @@ model_data.to_csv('model_data.csv', encoding = 'cp949', index = False)
 ~~~
 
 ## 모델링
+#### 재무 feature와 비재무 feature 결합 모델링
+##### 상관관계 높은 개별 feature에 pca
+> 13_1_상관관계 높은 개별 feature에 PCA하기.ipynb
+~~~python
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+x_scaled = pd.read_csv('x_scaled.csv가 저장되어 있는 경로', encoding = 'cp949')
+
+## PCA를 통한 차원 축소 : 다중공선성이 발생하는 feature들을 중심으로
+from sklearn.decomposition import PCA
+
+# scree plot
+
+def scree_plot(pca):
+    num_components = len(pca.explained_variance_ratio_)
+    ind = np.arange(num_components)
+    vals = pca.explained_variance_ratio_ 
+    
+    ax = plt.subplot()
+    cumvals = np.cumsum(vals)
+    ax.bar(ind, vals) # Bar plot
+    ax.plot(ind, cumvals, color = '#c0392b') # Line plot 
+    
+    for i in range(num_components): #라벨링(바 위에 텍스트(annotation) 쓰기)
+        ax.annotate(r"%s" % ((str(vals[i]*100)[:3])), (ind[i], vals[i]), va = "bottom", ha = "center", fontsize = 13)
+    
+    ax.set_xlabel("PC")
+    ax.set_ylabel("Variance")
+    plt.title('Scree plot')
+
+# 1. 주변 편의점 개수 & 정류장 개수
+data_1 = x_scaled[['주변 편의점 개수', '정류장 개수']]
+pca = PCA(n_components = 2)
+pc_1 = pca.fit_transform(data_1)
+df_pc_1 = pd.DataFrame(data = pc_1)
+df_pc_1 = pd.DataFrame(df_pc_1)
+df_pc_1.columns = ['접근성 PC1']
+
+# 2. 순이익률, 영업이익률, 매출총이익률, 총자산이익률, 자본금이익률
+data_2 = x_scaled[['순이익률', '영업이익률', '매출총이익률', '총자산순이익률(ROA)', '자본금이익률(ROE)']]
+pca = PCA(n_components = 5)
+pc_2 = pca.fit_transform(data_2)
+df_pc_2 = pd.DataFrame(data = pc_2)
+
+scree_plot(pca)  # PC1, PC2가 변동의 83%를 설명
+
+df_pc_2 = df_pc_2.iloc[:, 0:2]
+df_pc_2.columns = ['수익성 PC1', '수익성 PC2']
+
+# 3. 영업이익증가율, 순이익증가율
+data_3 = x_scaled[['영업이익증가율', '순이익증가율']]
+pca = PCA(n_components = 2)
+pc_3 = pca.fit_transform(data_3)
+df_pc_3 = pd.DataFrame(data = pc_3)
+df_pc_3 = df_pc_3.iloc[:, 0]
+df_pc_3 = pd.DataFrame(df_pc_3)
+df_pc_3.columns = ['이익증가율 PC1']
+
+# 4. 총자본회전율, 자기자본회전율
+data_4 = x_scaled[['총자본회전율', '자기자본회전율']]
+pca = PCA(n_components = 2)
+pc_4 = pca.fit_transform(data_4)
+df_pc_4 = pd.DataFrame(data = pc_4)
+scree_plot(pca)  # PC1이 변동의 83%를 설명
+df_pc_4 = df_pc_4.iloc[:, 0]
+df_pc_4 = pd.DataFrame(df_pc_4)
+df_pc_4.columns = ['활동성 PC1']
+
+# 5. 유동성비율, 당좌비율
+data_5 = x_scaled[['유동성비율', '당좌비율']]
+pca = PCA(n_components = 2)
+pc_5 = pca.fit_transform(data_5)
+df_pc_5 = pd.DataFrame(data = pc_5)
+scree_plot(pca)  # PC1이 변동의 97%를 설명
+df_pc_5 = df_pc_5.iloc[:, 0]
+df_pc_5 = pd.DataFrame(df_pc_5)
+df_pc_5.columns = ['안정성 PC1']
+
+x_scaled = x_scaled.drop(['주변 편의점 개수', '정류장 개수', '순이익률', '영업이익률', '매출총이익률', '총자산순이익률(ROA)', '자본금이익률(ROE)', '영업이익증가율', '순이익증가율', '총자본회전율', '자기자본회전율', '유동성비율', '당좌비율'], axis = 1)
+x_scaled = pd.concat([x_scaled, df_pc_1, df_pc_2, df_pc_3, df_pc_4, df_pc_5], axis = 1)
+
+x_scaled.to_csv('x_scaled_with_pca.csv', encoding = 'cp949', index = False)
+~~~
+##### 로지스틱 모델링
+> 13_2_로지스틱 모델링.ipynb
+~~~python
+import pandas as pd
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn import metrics
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score, roc_auc_score, roc_curve, precision_recall_curve
+
+import matplotlib.pyplot as plt
+
+# 개별 feature PCA 한 데이터 가져오기
+
+x_scaled = pd.read_csv('x_scaled_with_pca.csv가 저장되어 있는 경로', encoding = 'cp949')
+
+# target 가져오기
+
+model_data = pd.read_csv('model_data.csv가 저장되어 있는 경로', encoding = 'cp949', thousands = ',')
+
+model_data.drop(['corp_code', 'corp_name'], axis = 1, inplace = True)
+
+y_data = model_data['도산']
+
+# 훈련-시험 데이터 분할
+x_train, x_test, y_train, y_test = train_test_split(x_scaled, y_data, 
+                                                     train_size = 0.8,
+                                                     stratify = y_data)
+                                                     
+# 데이터 증강
+from sklearn.datasets import make_classification
+from imblearn.over_sampling import SMOTE
+
+smote = SMOTE(sampling_strategy = 1, k_neighbors = 5)
+x_train_r, y_train_r = smote.fit_resample(x_train, y_train)
+
+lr_clf = LogisticRegression()
+lr_clf.fit(x_train_r, y_train_r)
+y_pred = lr_clf.predict_proba(x_test)[:, 1]
+
+# ROC Curve
+
+fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+
+plt.plot(fpr, tpr)
+
+auc = np.trapz(tpr, fpr)
+print('AUC : ', auc)
+
+precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+
+f1_scores = 2*recall*precision/(recall+precision)
+print('Best threshold: ', thresholds[np.argmax(f1_scores)])
+print('Best F1-Score: ', np.max(f1_scores))
+
+# statsmodel로 summary 보기
+import statsmodels.api as sm
+
+model = sm.Logit(y_train_r, x_train_r)
+results = model.fit(method = 'newton')
+results.summary()
+~~~
+
+##### svm
+> 13_3_SVM.ipynb
+~~~python
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score, roc_auc_score, roc_curve, precision_recall_curve
+
+import matplotlib.pyplot as plt
+
+# 개별 feature PCA 한 데이터 가져오기
+
+x_scaled = pd.read_csv('x_scaled_with_pca.csv가 저장되어 있는 경로', encoding = 'cp949')
+
+# target 가져오기
+
+model_data = pd.read_csv('model_data.csv가 저장되어 있는 경로', encoding = 'cp949', thousands = ',')
+
+model_data.drop(['corp_code', 'corp_name'], axis = 1, inplace = True)
+
+y_data = model_data['도산']
+
+# 훈련-시험 데이터 분할
+x_train, x_test, y_train, y_test = train_test_split(x_scaled, y_data, 
+                                                     train_size = 0.8,
+                                                     stratify = y_data)
+                                                     
+# 데이터 증강
+from sklearn.datasets import make_classification
+from imblearn.over_sampling import SMOTE
+
+smote = SMOTE(sampling_strategy = 1, k_neighbors = 5)
+x_train_r, y_train_r = smote.fit_resample(x_train, y_train)
+
+from sklearn import svm
+# kernel = rbf, C = 0.05
+clf = svm.SVC(kernel = 'rbf', C = 0.05, probability = True)
+clf.fit(x_train_r, y_train_r)
+y_pred = clf.predict_proba(x_test)[: , 1]
+
+
+# ROC Curve
+
+fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+
+plt.plot(fpr, tpr)
+
+auc = np.trapz(tpr, fpr)
+print('AUC : ', auc)
+
+precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+f1_scores = 2*recall*precision/(recall+precision)
+print('Best threshold: ', thresholds[np.argmax(f1_scores)])
+print('Best F1-Score: ', np.max(f1_scores))
+
+# kernel = linear, C = 0.05
+clf = svm.SVC(kernel = 'linear', C = 0.05, probability = True)
+clf.fit(x_train_r, y_train_r)
+y_pred = clf.predict_proba(x_test)[: , 1]
+
+# ROC Curve
+
+fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+
+plt.plot(fpr, tpr)
+
+auc = np.trapz(tpr, fpr)
+print('AUC : ', auc)
+
+precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+f1_scores = 2*recall*precision/(recall+precision)
+print('Best threshold: ', thresholds[np.argmax(f1_scores)])
+print('Best F1-Score: ', np.max(f1_scores))
+
+# kernel = rbf, C = 0.1
+clf = svm.SVC(kernel = 'rbf', C = 0.1, probability = True)
+clf.fit(x_train_r, y_train_r)
+y_pred = clf.predict_proba(x_test)[: , 1]
+
+# ROC Curve
+
+fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+
+plt.plot(fpr, tpr)
+
+auc = np.trapz(tpr, fpr)
+print('AUC : ', auc)
+
+precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+f1_scores = 2*recall*precision/(recall+precision)
+print('Best threshold: ', thresholds[np.argmax(f1_scores)])
+print('Best F1-Score: ', np.max(f1_scores))
+
+# kernel = linear, C = 0.1
+clf = svm.SVC(kernel = 'linear', C = 0.1, probability = True)
+clf.fit(x_train_r, y_train_r)
+y_pred = clf.predict_proba(x_test)[: , 1]
+
+# ROC Curve
+
+fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+
+plt.plot(fpr, tpr)
+
+auc = np.trapz(tpr, fpr)
+print('AUC : ', auc)
+
+precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+f1_scores = 2*recall*precision/(recall+precision)
+print('Best threshold: ', thresholds[np.argmax(f1_scores)])
+print('Best F1-Score: ', np.max(f1_scores))
+
+# kernel = rbf, C = 0.5
+clf = svm.SVC(kernel = 'rbf', C = 0.5, probability = True)
+clf.fit(x_train_r, y_train_r)
+y_pred = clf.predict_proba(x_test)[: , 1]
+
+# ROC Curve
+
+fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+
+plt.plot(fpr, tpr)
+
+auc = np.trapz(tpr, fpr)
+print('AUC : ', auc)
+
+precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+f1_scores = 2*recall*precision/(recall+precision)
+print('Best threshold: ', thresholds[np.argmax(f1_scores)])
+print('Best F1-Score: ', np.max(f1_scores))
+
+# kernel = linear, C = 0.5
+clf = svm.SVC(kernel = 'linear', C = 0.5, probability = True)
+clf.fit(x_train_r, y_train_r)
+y_pred = clf.predict_proba(x_test)[: , 1]
+
+# ROC Curve
+
+fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+
+plt.plot(fpr, tpr)
+
+auc = np.trapz(tpr, fpr)
+print('AUC : ', auc)
+
+precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+f1_scores = 2*recall*precision/(recall+precision)
+print('Best threshold: ', thresholds[np.argmax(f1_scores)])
+print('Best F1-Score: ', np.max(f1_scores))
+
+# kernel = rbf, C = 1
+clf = svm.SVC(kernel = 'rbf', C = 1, probability = True)
+clf.fit(x_train_r, y_train_r)
+y_pred = clf.predict_proba(x_test)[: , 1]
+
+# ROC Curve
+
+fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+
+plt.plot(fpr, tpr)
+
+auc = np.trapz(tpr, fpr)
+print('AUC : ', auc)
+
+precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+f1_scores = 2*recall*precision/(recall+precision)
+print('Best threshold: ', thresholds[np.argmax(f1_scores)])
+print('Best F1-Score: ', np.max(f1_scores))
+
+# kernel = rbf, C = 5
+clf = svm.SVC(kernel = 'rbf', C = 5, probability = True)
+clf.fit(x_train_r, y_train_r)
+y_pred = clf.predict_proba(x_test)[: , 1]
+
+# ROC Curve
+
+fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+
+plt.plot(fpr, tpr)
+
+auc = np.trapz(tpr, fpr)
+print('AUC : ', auc)
+
+precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+f1_scores = 2*recall*precision/(recall+precision)
+print('Best threshold: ', thresholds[np.argmax(f1_scores)])
+print('Best F1-Score: ', np.max(f1_scores))
+
+# kernel = rbf, C = 10
+clf = svm.SVC(kernel = 'rbf', C = 10, probability = True)
+clf.fit(x_train_r, y_train_r)
+y_pred = clf.predict_proba(x_test)[: , 1]
+# ROC Curve
+
+fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+
+plt.plot(fpr, tpr)
+
+auc = np.trapz(tpr, fpr)
+print('AUC : ', auc)
+
+precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+f1_scores = 2*recall*precision/(recall+precision)
+print('Best threshold: ', thresholds[np.argmax(f1_scores)])
+print('Best F1-Score: ', np.max(f1_scores))
+
+# kernel = rbf, C = 1 결정
+~~~
+
+##### 의사결정트리
+> 13_4 Decision Tree.ipynb
+~~~python
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score, roc_auc_score, roc_curve, precision_recall_curve
+
+import matplotlib.pyplot as plt
+
+# 개별 feature PCA 한 데이터 가져오기
+
+x_scaled = pd.read_csv('x_scaled_with_pca.csv가 저장되어 있는 경로', encoding = 'cp949')
+
+# target 가져오기
+
+model_data = pd.read_csv('model_data.csv가 저장되어 있는 경로', encoding = 'cp949', thousands = ',')
+
+model_data.drop(['corp_code', 'corp_name'], axis = 1, inplace = True)
+
+y_data = model_data['도산']
+
+# 훈련-시험 데이터 분할
+x_train, x_test, y_train, y_test = train_test_split(x_scaled, y_data, 
+                                                     train_size = 0.8,
+                                                     stratify = y_data)
+                                                     
+# 데이터 증강
+from sklearn.datasets import make_classification
+from imblearn.over_sampling import SMOTE
+
+smote = SMOTE(sampling_strategy = 1, k_neighbors = 5)
+x_train_r, y_train_r = smote.fit_resample(x_train, y_train)
+
+# max_depth 조절하면서 roc curve, f1-score 보기
+from sklearn import tree
+
+score = []
+
+for i in range(3, 20):
+    clf = tree.DecisionTreeClassifier(max_depth = i)
+    clf.fit(x_train_r, y_train_r)
+    
+    y_pred = clf.predict_proba(x_test)[:, 1]
+    
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+    precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+    
+    auc = np.trapz(tpr, fpr)
+    
+    f1_scores = 2*recall*precision/(recall+precision)
+    
+    best_threshold = thresholds[np.argmax(f1_scores)]
+    best_f1_score = np.max(f1_scores)
+    
+    _dict = {
+        'auc' : auc,
+        'best_threshold' : best_threshold,
+        'best_f1_score' : best_f1_score
+    }
+    
+    score.append(_dict)
+    
+df_score = pd.DataFrame(score)
+df_score.index = range(3, 20)
+
+plt.plot(df_score['auc'])
+plt.plot(df_score['best_f1_score'])
+# 여러번 시행했을 때, max_depth = 6 정도가 적절해 보임
+~~~
+
+##### knn
+> 13_5_kNN.ipynb
+~~~python
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score, roc_auc_score, roc_curve, precision_recall_curve
+
+import matplotlib.pyplot as plt
+
+# 개별 feature PCA 한 데이터 가져오기
+
+x_scaled = pd.read_csv('x_scaled_with_pca.csv가 저장되어 있는 경로', encoding = 'cp949')
+
+# target 가져오기
+
+model_data = pd.read_csv('model_data.csv가 저장되어 있는 경로', encoding = 'cp949', thousands = ',')
+
+model_data.drop(['corp_code', 'corp_name'], axis = 1, inplace = True)
+
+y_data = model_data['도산']
+
+# 훈련-시험 데이터 분할
+x_train, x_test, y_train, y_test = train_test_split(x_scaled, y_data, 
+                                                     train_size = 0.8,
+                                                     stratify = y_data)
+                                                     
+# 데이터 증강
+from sklearn.datasets import make_classification
+from imblearn.over_sampling import SMOTE
+
+smote = SMOTE(sampling_strategy = 1, k_neighbors = 5)
+x_train_r, y_train_r = smote.fit_resample(x_train, y_train)
+
+from sklearn.neighbors import KNeighborsClassifier
+# n_neighbors 조절하면서 auc, f1-score 보기
+
+score = []
+
+for i in range(1, 100):
+    clf = KNeighborsClassifier(i)
+    clf.fit(x_train_r, y_train_r)
+    
+    y_pred = clf.predict_proba(x_test)[:, 1]
+    
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+    precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+    
+    auc = np.trapz(tpr, fpr)
+    
+    f1_scores = 2*recall*precision/(recall+precision)
+    
+    best_threshold = thresholds[np.argmax(f1_scores)]
+    best_f1_score = np.max(f1_scores)
+    
+    _dict = {
+        'auc' : auc,
+        'best_threshold' : best_threshold,
+        'best_f1_score' : best_f1_score
+    }
+    
+    score.append(_dict)
+    
+df_score = pd.DataFrame(score)
+df_score.index = range(1, 100)
+
+plt.plot(df_score['auc'])
+plt.plot(df_score['best_f1_score'])
+# 시행마다 그래프의 형태가 매우 다름. 그나마 n_neighbors = 35 정도가 무난할 것 같음
+~~~
+
+##### 앙상블_보팅
+> 13_6_Ensemble Method_Voting.ipynb
+~~~python
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score, roc_auc_score, roc_curve, precision_recall_curve
+
+
+import matplotlib.pyplot as plt
+
+# 개별 feature PCA 한 데이터 가져오기
+
+x_scaled = pd.read_csv('x_scaled_with_pca.csv가 저장되어 있는 경로', encoding = 'cp949')
+
+# target 가져오기
+
+model_data = pd.read_csv('model_data.csv가 저장되어 있는 경로', encoding = 'cp949', thousands = ',')
+
+model_data.drop(['corp_code', 'corp_name'], axis = 1, inplace = True)
+
+y_data = model_data['도산']
+
+# 훈련-시험 데이터 분할
+x_train, x_test, y_train, y_test = train_test_split(x_scaled, y_data, 
+                                                     train_size = 0.8,
+                                                     stratify = y_data)
+                                                     
+# 데이터 증강
+from sklearn.datasets import make_classification
+from imblearn.over_sampling import SMOTE
+
+smote = SMOTE(sampling_strategy = 1, k_neighbors = 5)
+x_train_r, y_train_r = smote.fit_resample(x_train, y_train)
+
+## 1. 보팅 앙상블 기법 적용
+from sklearn.ensemble import VotingClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn import svm
+from sklearn import tree
+from sklearn.neighbors import KNeighborsClassifier
+
+# 기존 최적화했던 하이퍼 파라미터 적용
+
+lr_clf = LogisticRegression()
+svm_clf = svm.SVC(kernel = 'rbf', C = 1, probability = True)
+dt_clf = tree.DecisionTreeClassifier(max_depth = 6)
+knn_clf = KNeighborsClassifier(n_neighbors = 35)
+
+# 소프트 보팅
+svot_clf = VotingClassifier(estimators = [('Logistic', lr_clf), ('SVM', svm_clf), ('DT', dt_clf), ('kNN', knn_clf)],
+                            voting = 'soft')
+svot_clf.fit(x_train_r, y_train_r)
+svot_clf_pred = svot_clf.predict(x_test)
+print(accuracy_score(y_test, svot_clf_pred))
+
+# threshold 조절해서 ROC curve 그려보기
+y_pred = svot_clf.predict_proba(x_test)[: , 1]
+
+# ROC Curve :
+
+fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+
+plt.plot(fpr, tpr)
+
+auc = np.trapz(tpr, fpr)
+print('AUC : ', auc)
+
+# f1_score의 최댓값과 그 때의 threshold 찾기
+precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+f1_scores = 2*recall*precision/(recall+precision)
+print('Best threshold: ', thresholds[np.argmax(f1_scores)])
+print('Best F1-Score: ', np.max(f1_scores))
+~~~
