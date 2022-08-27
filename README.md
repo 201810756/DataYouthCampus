@@ -9,15 +9,17 @@
   * [1-3. 워크넷에서 재무제표와 사업자등록번호 가져오기](#워크넷에서-재무제표와-사업자등록번호-가져오기)
   * [1-4. dart에서 사업자등록번호 가져오기](#dart에서-사업자등록번호-가져오기)
   * [1-5. 사업자등록번호를 통해 폐업 여부 조회하기](#사업자등록번호를-통해-폐업-여부-조회하기)
-  * [1-6. 캐치에서 기업형태 및 산업군 가져오기](#캐치에서-기업형태-및-산업군-가져오기)
-  * [1-7. 잡플래닛에서 기업형태 및 산업군 가져오기](#잡플래닛에서-기업형태-및-산업군-가져오기)
-  * [1-8. dart에서 상세주소 가져오기](#dart에서-상세주소-가져오기)
-  * [1-9. 카카오맵 api를 통한 주변 편의점 개수 확인](#카카오맵-api를-통한-주변-편의점-개수-확인)
+  * [1-6. 필요한 변수만 남기기](#필요한-변수만-남기기)
+  * [1-7. 캐치에서 기업형태 및 산업군 가져오기](#캐치에서-기업형태-및-산업군-가져오기)
+  * [1-8. 잡플래닛에서 기업형태 및 산업군 가져오기](#잡플래닛에서-기업형태-및-산업군-가져오기)
+  * [1-9. dart에서 상세주소 가져오기](#dart에서-상세주소-가져오기)
   * [1-10. 카카오맵 api를 통한 위도 및 경도 찾기](#카카오맵-api를-통한-위도-및-경도-찾기)
-  * [1-11. 사업장주소 주변 버스정류장 개수 찾기](#사업장주소-주변-버스정류장-개수-찾기)
-  * [1-12. dart에서 업종코드 가져와서 섹터 정비](#dart에서-업종코드-가져와서-섹터-정비)
-  * [1-13. 데이터 결합 및 변수 생성](#데이터-결합-및-변수-생성)
-  * [1-14. 데이터 도산 여부 정의 및 sbhi 입력](#데이터-도산-여부-정의-및-sbhi-입력)
+  * [1-11. 카카오맵 api를 통한 주변 편의점 개수 확인](#카카오맵-api를-통한-주변-편의점-개수-확인)
+  * [1-12. 사업장주소 주변 버스정류장 개수 찾기](#사업장주소-주변-버스정류장-개수-찾기)
+  * [1-13. dart에서 업종코드 가져와서 섹터 정비](#dart에서-업종코드-가져와서-섹터-정비)
+  * [1-14. 데이터 결합 및 변수 생성](#데이터-결합-및-변수-생성)
+  * [1-15. 데이터 통합](#데이터-통합)
+  * [1-16. 데이터 도산 여부 정의 및 sbhi 입력](#데이터-도산-여부-정의-및-sbhi-입력)
 * [2. 데이터 전처리](#데이터-전처리)
   * [2-1. 결측치 처리 및 설립일자 이상치 제거](#결측치-처리-및-설립일자-이상치-제거)
   * [2-2. feature 보정 및 데이터 선정](#feature-보정-및-데이터-선정)
@@ -29,6 +31,9 @@
     * [3-1-4. 의사결정트리](#의사결정트리)
     * [3-1-5. knn](#knn)
     * [3-1-6. 앙상블_보팅](#앙상블_보팅)
+    * [3-1-7. 앙상블_랜덤 포레스트](#앙상블_랜덤-포레스트)
+    * [3-1-8. 앙상블_xgboost](#앙상블_xgboost)
+    * [3-1-9. k_fold cross validation](k_fold-cross-validation)
 
 
 ## 데이터 수집
@@ -111,7 +116,7 @@ for i in range(len(address_data)):
  data_cln.to_csv('', encoding = 'cp949')
  ~~~
  #### 워크넷에서 재무제표와 사업자등록번호 가져오기
- > 3_셀레니움으로 워크넷에서 재무제표, 사업자등록번호 불러오기.ipynb
+ > 3_워크넷에서 재무제표, 사업자등록번호 불러오기.ipynb
 1. [워크넷](https://www.work.go.kr/seekWantedMain.do)에서 기업명과 사업장주소를 통해 동일한 기업에 대해 사업자등록번호와 재무제표를 가져옴
 2. 검색결과가 없거나 검색은 되지만 재무제표가 없는 경우 비고란에 별도로 기재
 > 결과 데이터 : 'corp_finstat_2020_(지역).csv' / ''corp_finstat_2021_(지역).csv'
@@ -330,7 +335,7 @@ corp_finstat_2021_(지역)_df = pd.DataFrame(corp_finstat_2021).set_index('corp_
 corp_finstat_2021_(지역)_df.to_csv('corp_finstat_2021_(지역).csv', encoding = 'cp949')
 ~~~
 #### dart에서 사업자등록번호 가져오기
-> 4_셀레니움으로 dart에서 사업자등록번호 가져오기.ipynb
+> 4_dart에서 사업자등록번호 가져오기.ipynb
 1. 폐업된 기업들은 [워크넷](https://www.work.go.kr/seekWantedMain.do)에서 검색되지 않으므로, [dart](https://dart.fss.or.kr/main.do)에서 추가적으로 사업자등록번호를 가져오기
 > 결과 데이터 : 'corp_finstat_2020_(지역)_2.csv'
 ~~~python
@@ -496,9 +501,35 @@ data['사업자 상태'] = df_status['사업자 상태']
 data['폐업일자'] = df_status['폐업일자']
 data.to_csv('corp_finstat_2020_(지역)_3.csv', encoding = 'cp949', index = False)
 ~~~
+#### 필요한 변수만 남기기
+> 6_1_corp_finstat_2020_3 파일에서 필요한 변수만 남기기.ipynb
+1. 재무제표가 담긴 'corp_finstat_2020_(지역)_3.csv' 파일에서 필요한 변수만 남김
+~~~python
+import pandas as pd
+region="지역" # 해당 지역으로 수정하기
+data = pd.read_csv(f'corp_finstat_2021_{region}_3.csv가 저장되어 있는 경로', encoding = 'cp949',thousands = ',')
+data['매출총이익']=data['매출총이익'].str.replace(",","")
+data['매출액']=data['매출액'].str.replace(",","")
+sale_total_profit_rate=[]
+
+for i in range(len(data)):
+    rate={}
+    try:
+        rate["매출총이익률"]=round(float(data["매출총이익"][i])/float(data["매출액"][i])*100,1)
+        sale_total_profit_rate.append(rate)
+    except:
+        rate["매출총이익률"]=""
+        sale_total_profit_rate.append(rate)
+
+sale_total_profit_rate_df=pd.DataFrame(sale_total_profit_rate)
+data["매출총이익률"]=sale_total_profit_rate_df["매출총이익률"]
+# column 네이밍
+data=data[["corp_name","비고","순이익률","영업이익률","매출총이익률","총자산순이익률(ROA)","자본금이익률(ROE)","매출액증가율","영업이익증가율","순이익증가율","총자본회전율","자기자본회전율","부채비율","유동성비율","당좌비율","자기자본비율","사업자등록번호","사업자 상태","폐업일자"]]
+data.to_csv(f'selected_feature({region}).csv',encoding="cp949",index=False)
+~~~
 
 #### 캐치에서 기업형태 및 산업군 가져오기
-> 7_캐치에서 섹터 가져오기.ipynb
+> 7_1_캐치에서 기업규모와 섹터 가져오기.ipynb
 1. [캐치](https://www.catch.co.kr/)에 접속하여 로그인
 2. 기업이름 검색을 통해 기업의 기업형태, 산업군 가져오기
 > 결과 데이터 : 'corp_nps_(지역)_2.csv'
@@ -669,7 +700,7 @@ corp_nps.to_csv('corp_nps_(지역)_2.csv', encoding = 'cp949')
 ~~~
 
 #### 잡플래닛에서 기업형태 및 산업군 가져오기
-> 7_2 잡플래닛에서 기업형태, 산업군 가져오기.ipynb
+> 7_2_잡플래닛에서 기업규모와 섹터 져오기.ipynb
 1. [캐치](https://www.catch.co.kr/)에서 검색되지 않은 기업들에 대해 [잡플래닛](https://www.jobplanet.co.kr/welcome/index)에서 보완
 2. 주소비교를 통해 동일한 기업에 대해 형태 및 산업군 가져오기 
 > 결과물 : 'corp_nps_(지역)_3.csv'
@@ -791,9 +822,54 @@ df_detail_address = pd.DataFrame(detail_address)
 data["상세주소"]=df_detail_address["상세주소"]
 data.to_csv(f"corp_nps_{지역}_4.csv",encoding="cp949",index = False)
 ~~~
+#### 카카오맵 api를 통한 위도 및 경도 찾기
+> 8_1_각 위치별 경도 위도 찾기.ipynb
+1. [카카오맵 api](https://apis.map.kakao.com/)에서 제공하는 api 기능을 통해 기업 주소의 위,경도 찾기
+> 결과 데이터 : '위도경도확인_(지역).csv'
+~~~python
+import requests
+import pandas as pd
+import numpy as np
+import json
 
+data=pd.read_csv("corp_nps_(지역)_6.csv",encoding='cp949')
+corp_name_list=data['corp_name']
+add_list=data['상세주소']
+
+final_list=[]
+
+for corp_name, address in zip(corp_name_list,add_list):
+    location_list={}
+    location_list['corp_name'] = corp_name
+    address_split=address.split()
+    for i in range(len(address_split)):
+        try:
+            if len(address.split())<=3:
+                location_list['위도'] = '조회 안됨'
+                location_list['경도'] = '조회 안됨'
+                final_list.append(location_list)
+                break
+            else:
+                address_split=address.split()
+                url='https://dapi.kakao.com/v2/local/search/address.json?query='+address
+                headers={'Authorization':'KakaoAK 7b3683e0b4142b33db211d5ad72fab0a'} 
+                result=json.loads(str(requests.get(url,headers=headers).text))
+                longitude=result['documents'][0]['address']['x']
+                latitude=result['documents'][0]['address']['y']
+                location_list['위도'] = latitude
+                location_list['경도'] = longitude
+                final_list.append(location_list)
+                break
+        except:
+            address_split=address.split()
+            address = ' '.join(address_split[0 : len(address_split) - (i + 1)])
+            
+ location=pd.DataFrame(final_list)
+ location.to_csv("위도경도확인_(지역).csv",encoding="cp949",index=False)
+ ~~~
+ 
 #### 카카오맵 api를 통한 주변 편의점 개수 확인
-> 8_2_카카오맵 api를 통한 편의점 개수 확인.ipynb
+> 8_3_카카오맵 api를 통한 편의점 개수 확인.ipynb
 1. [카카오맵 api](https://apis.map.kakao.com/)에서 제공하는 api 기능을 통해 주변 편의점 개수 조회
 > 결과 데이터 : 'corp_nps_(지역)_6.csv'
 ~~~python
@@ -841,52 +917,6 @@ for corp_name, address in zip(corp_name_list,add_list):
  data["주변 편의점 개수"]=num_of_conv['주변 편의점 개수']
  data.to_csv("corp_nps_(지역)_6.csv",encoding="cp949",index=False)
 ~~~
-
-#### 카카오맵 api를 통한 위도 및 경도 찾기
-> 8.3.1_각 위치별 경도 위도 찾기.ipynb
-1. [카카오맵 api](https://apis.map.kakao.com/)에서 제공하는 api 기능을 통해 기업 주소의 위,경도 찾기
-> 결과 데이터 : '위도경도확인_(지역).csv'
-~~~python
-import requests
-import pandas as pd
-import numpy as np
-import json
-
-data=pd.read_csv("corp_nps_(지역)_6.csv",encoding='cp949')
-corp_name_list=data['corp_name']
-add_list=data['상세주소']
-
-final_list=[]
-
-for corp_name, address in zip(corp_name_list,add_list):
-    location_list={}
-    location_list['corp_name'] = corp_name
-    address_split=address.split()
-    for i in range(len(address_split)):
-        try:
-            if len(address.split())<=3:
-                location_list['위도'] = '조회 안됨'
-                location_list['경도'] = '조회 안됨'
-                final_list.append(location_list)
-                break
-            else:
-                address_split=address.split()
-                url='https://dapi.kakao.com/v2/local/search/address.json?query='+address
-                headers={'Authorization':'KakaoAK 7b3683e0b4142b33db211d5ad72fab0a'} 
-                result=json.loads(str(requests.get(url,headers=headers).text))
-                longitude=result['documents'][0]['address']['x']
-                latitude=result['documents'][0]['address']['y']
-                location_list['위도'] = latitude
-                location_list['경도'] = longitude
-                final_list.append(location_list)
-                break
-        except:
-            address_split=address.split()
-            address = ' '.join(address_split[0 : len(address_split) - (i + 1)])
-            
- location=pd.DataFrame(final_list)
- location.to_csv("위도경도확인_(지역).csv",encoding="cp949",index=False)
- ~~~
  
  #### 사업장주소 주변 버스정류장 개수 찾기
  > 8_4_사업장 주변 버스정류장 개수 가져오기.ipynb
@@ -954,7 +984,7 @@ corp_nps.to_csv(f'corp_nps_{지역}_7.csv', encoding = 'cp949', index = False)
 ~~~
 
 #### dart에서 업종코드 가져와서 섹터 정비
-> 8_5_다트에서 업종코드 가져오기.ipynb
+> 8_5_다트 업종코드로 섹터 가져오기.ipynb
 1. 기존 [캐치](https://www.catch.co.kr/)와 [잡플래닛](https://www.jobplanet.co.kr/welcome/index)에서 수집한 기업 섹터를 개선하기 위해 [opendart](https://opendart.fss.or.kr/)의 api를 통해 업종코드를 가져옴
 2. 가져온 업종코드는 [공공데이터포털(고용노동부_업종코드)](https://www.data.go.kr/data/15049592/fileData.do)와 결합하여 21개의 섹터 중 하나로 배치(기존 섹터 column을 대체)
 > 결과 데이터 : 'corp_nps_(지역)_8.csv'
@@ -1211,7 +1241,7 @@ corp_nps.to_csv(f'corp_nps_{지역}_8.csv', encoding = 'cp949', index = False)
 ~~~
 
 #### 데이터 결합 및 변수 생성
-> 9.1_마지막 정제 및 통합
+> 9.1_마지막 정제 및 통합.ipynb
 1. 'corp_nps' 데이터를 활용하여 만들 수 있는 변수 feature 생성 
 > 결과 데이터 : final_data_(지역).csv
 ~~~python
@@ -1259,7 +1289,22 @@ final_data=pd.concat([corp_nps,data2],axis=1)
 final_data.drop('corp_name_x',axis=1,inplace=True)
 final_data.to_csv("final_data_(지역).csv",encoding='cp949',index=False)
 ~~~
+#### 데이터 통합
+> 9_2_데이터 통합.ipynb
+1. 각 지역별로 구분되어 있던 데이터를 하나의 데이터로 통합
+> 결과 데이터 : 'final_data_전국.csv'
+~~~python
+import pandas as pd
+data1=pd.read_csv("final_data_강원제주.csv",encoding='cp949')
+data2=pd.read_csv("final_data_경기.csv",encoding='cp949')
+data3=pd.read_csv("final_data_경상대구전라광주.csv",encoding='cp949')
+data4=pd.read_csv("final_data_대전충청.csv",encoding='cp949')
+data5=pd.read_csv("final_data_서울.csv",encoding='cp949')
+data6=pd.read_csv("final_data_인천부산울산.csv",encoding='cp949')
 
+integrated_data=pd.concat([data1,data2,data3,data4,data5,data6],axis=0)
+integrated_data.to_csv("final_data_전국.csv",encoding="cp949",index=False)
+~~~
 #### 데이터 도산 여부 정의 및 sbhi 입력
 > 10_조건 걸어서 도산 여부 판단하기, 섹터별 SBHI 가져오기.ipynb
 1. 지역별 'final_data_(지역).csv'를 통합한 데이터를 활용
@@ -1584,7 +1629,7 @@ final_data.to_csv('final_data_3.csv', encoding = 'cp949', index = False)
 ~~~
 
 #### feature 보정 및 데이터 선정
-> 12_0_수치변환하고 feature, target만 남기기.ipynb
+> 12_변수 보정하고 독립변수와 종속변수만 남기기.ipynb
 1. 편의점 개수, 정류장 개수, 연간 이직율, 존속연수 루트 스케일링 
 2. 부채비율을 제외한 재무비율의 경우, 양수값에 대해서는 해당값과 제 99 분위수 중 작은 값의 루트값, 음수값은 해당 값과 제 1 분위수 중 큰 값의 절댓값의 루트값의 음수값
 3. 부채비율의 경우, 양수값은 해당 값과 제 99 분위수 중 작은 값의 루트값, 음수값은 제 99 분위수의 루트값
@@ -1659,6 +1704,7 @@ model_data.to_csv('model_data.csv', encoding = 'cp949', index = False)
 
 ## 모델링
 #### 재무 feature와 비재무 feature 결합 모델링
+> 재무 feature와 비재무 feature를 결합한 데이터에 대한 모델링 진행
 ##### 상관관계 높은 개별 feature에 pca
 > 13_1_상관관계 높은 개별 feature에 PCA하기.ipynb
 ~~~python
@@ -2240,4 +2286,632 @@ precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
 f1_scores = 2*recall*precision/(recall+precision)
 print('Best threshold: ', thresholds[np.argmax(f1_scores)])
 print('Best F1-Score: ', np.max(f1_scores))
+~~~
+
+##### 앙상블_랜덤 포레스트
+> 13_7_Ensemble Method_Random Forest.ipynb
+~~~python
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score, roc_auc_score, roc_curve, precision_recall_curve
+
+import matplotlib.pyplot as plt
+
+# 개별 feature PCA 한 데이터 가져오기
+
+x_scaled = pd.read_csv('x_scaled_with_pca.csv가 저장되어 있는 경로', encoding = 'cp949')
+
+# target 가져오기
+
+model_data = pd.read_csv('model_data.csv가 저장되어 있는 경로', encoding = 'cp949', thousands = ',')
+
+model_data.drop(['corp_code', 'corp_name'], axis = 1, inplace = True)
+y_data = model_data['도산']
+
+# 훈련-시험 데이터 분할
+x_train, x_test, y_train, y_test = train_test_split(x_scaled, y_data, 
+                                                     train_size = 0.8,
+                                                     stratify = y_data)
+# 데이터 증강
+from sklearn.datasets import make_classification
+from imblearn.over_sampling import SMOTE
+
+smote = SMOTE(sampling_strategy = 1, k_neighbors = 5)
+x_train_r, y_train_r = smote.fit_resample(x_train, y_train)
+
+from sklearn.ensemble import RandomForestClassifier
+# max_depth 조절하면서 auc, f1-score 보기
+score = []
+
+for i in range(5, 40):
+    rf_clf = RandomForestClassifier(n_estimators = 1000,
+                                    max_depth = i,
+                                    max_features = 'auto',
+                                    verbose = 1,
+                                    n_jobs = -1)
+    
+    rf_clf.fit(x_train_r, y_train_r)
+    y_pred = rf_clf.predict_proba(x_test)[: , 1]
+    
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+    precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+    
+    auc = np.trapz(tpr, fpr)
+    
+    f1_scores = 2*recall*precision/(recall+precision)
+    
+    best_threshold = thresholds[np.argmax(f1_scores)]
+    best_f1_score = np.max(f1_scores)
+    
+    _dict = {
+        'auc' : auc,
+        'best_threshold' : best_threshold,
+        'best_f1_score' : best_f1_score
+    }
+    
+    score.append(_dict)
+    
+df_score = pd.DataFrame(score)
+df_score.index = range(5, 40)
+
+plt.plot(df_score['auc'])
+plt.plot(df_score['best_f1_score'])
+
+## 20개 이상 정도면 적당한 것 같음
+
+rf_clf = RandomForestClassifier(n_estimators = 1000,
+                                    max_depth = 25,
+                                    max_features = 'auto',
+                                    verbose = 1,
+                                    n_jobs = -1)
+    
+rf_clf.fit(x_train_r, y_train_r)
+# feature 중요도 시각화
+def plot_feature_importance(model):
+    n_features = x_scaled.shape[1]
+    plt.barh(np.arange(n_features), sorted(model.feature_importances_), align="center")
+    plt.yticks(np.arange(n_features), x_scaled.columns)
+    plt.xlabel("Random Forest Feature Importance")
+    plt.ylabel("Feature")
+    plt.ylim(-1, n_features)
+
+plt.rc('font', family = 'Malgun Gothic')
+plot_feature_importance(rf_clf)
+~~~
+
+##### 앙상블_xgboost
+>13_8_Ensemble Method_XGBoost.ipynb
+~~~python
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score, roc_auc_score, roc_curve, precision_recall_curve
+
+import matplotlib.pyplot as plt
+
+# 개별 feature PCA 한 데이터 가져오기
+
+x_scaled = pd.read_csv('x_scaled_with_pca.csv가 저장되어 있는 경로', encoding = 'cp949')
+
+# target 가져오기
+
+model_data = pd.read_csv('model_data.csv가 저장되어 있는 경로', encoding = 'cp949', thousands = ',')
+
+model_data.drop(['corp_code', 'corp_name'], axis = 1, inplace = True)
+y_data = model_data['도산']
+
+# 훈련-시험 데이터 분할
+x_train, x_test, y_train, y_test = train_test_split(x_scaled, y_data, 
+                                                     train_size = 0.8,
+                                                     stratify = y_data)
+# 데이터 증강
+from sklearn.datasets import make_classification
+from imblearn.over_sampling import SMOTE
+
+smote = SMOTE(sampling_strategy = 1, k_neighbors = 5)
+x_train_r, y_train_r = smote.fit_resample(x_train, y_train)
+
+# DMatrix 변환
+dtrain = xgb.DMatrix(data = x_train_r, label = y_train_r)
+dtest = xgb.DMatrix(data = x_test, label = y_test)
+
+wlist = [(dtrain, 'train'), (dtest, 'eval')]
+
+## max_depth, eta, num_boost_round 바꾸면서 f1-score, auc 보기 -> 대체적으로 7개가 적합해보임
+# eta = 0.05, num_boost_round = 500
+
+grid = []
+
+for max_depth in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:    
+    params = {'max_depth' : max_depth,
+             'eta' : 0.05, 
+             'objective' : 'binary:logistic',
+             'eval_metric' : 'logloss',
+             'early_stoppings' : 50 }
+    
+    xgb_model = xgb.train(params = params, dtrain = dtrain, num_boost_round = 500, evals = wlist)
+    xgb_model_predict = xgb_model.predict(dtest)
+    
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, xgb_model_predict)
+    precision, recall, thresholds = precision_recall_curve(y_test, xgb_model_predict)
+    f1_scores = 2*recall*precision/(recall+precision)
+    
+    
+    _dict = {
+        'max_depth' : max_depth,
+        'best threshold' : thresholds[np.argmax(f1_scores)],
+        'best F1-score' : np.max(f1_scores),
+        'auc' : np.trapz(tpr, fpr)
+    }
+
+    grid.append(_dict)
+    
+pd.DataFrame(grid)
+
+# eta = 0.1, num_boost_round = 500
+
+grid = []
+
+for max_depth in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:    
+    params = {'max_depth' : max_depth,
+             'eta' : 0.1, 
+             'objective' : 'binary:logistic',
+             'eval_metric' : 'logloss',
+             'early_stoppings' : 50 }
+    
+    xgb_model = xgb.train(params = params, dtrain = dtrain, num_boost_round = 500, evals = wlist)
+    xgb_model_predict = xgb_model.predict(dtest)
+    
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, xgb_model_predict)
+    precision, recall, thresholds = precision_recall_curve(y_test, xgb_model_predict)
+    f1_scores = 2*recall*precision/(recall+precision)
+    
+    
+    _dict = {
+        'max_depth' : max_depth,
+        'best threshold' : thresholds[np.argmax(f1_scores)],
+        'best F1-score' : np.max(f1_scores),
+        'auc' : np.trapz(tpr, fpr)
+    }
+
+    grid.append(_dict)
+    
+pd.DataFrame(grid)
+
+# eta = 0.15, num_boost_round = 500
+
+grid = []
+
+for max_depth in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:    
+    params = {'max_depth' : max_depth,
+             'eta' : 0.15, 
+             'objective' : 'binary:logistic',
+             'eval_metric' : 'logloss',
+             'early_stoppings' : 50 }
+    
+    xgb_model = xgb.train(params = params, dtrain = dtrain, num_boost_round = 500, evals = wlist)
+    xgb_model_predict = xgb_model.predict(dtest)
+    
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, xgb_model_predict)
+    precision, recall, thresholds = precision_recall_curve(y_test, xgb_model_predict)
+    f1_scores = 2*recall*precision/(recall+precision)
+    
+    
+    _dict = {
+        'max_depth' : max_depth,
+        'best threshold' : thresholds[np.argmax(f1_scores)],
+        'best F1-score' : np.max(f1_scores),
+        'auc' : np.trapz(tpr, fpr)
+    }
+
+    grid.append(_dict)
+    
+ pd.DataFrame(grid)
+ 
+ # eta = 0.2, num_boost_round = 500
+ 
+ grid = []
+
+for max_depth in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:    
+    params = {'max_depth' : max_depth,
+             'eta' : 0.2, 
+             'objective' : 'binary:logistic',
+             'eval_metric' : 'logloss',
+             'early_stoppings' : 50 }
+    
+    xgb_model = xgb.train(params = params, dtrain = dtrain, num_boost_round = 400, evals = wlist)
+    xgb_model_predict = xgb_model.predict(dtest)
+    
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, xgb_model_predict)
+    precision, recall, thresholds = precision_recall_curve(y_test, xgb_model_predict)
+    
+    f1_scores = 2*recall*precision/(recall+precision)
+    
+    
+    _dict = {
+        'max_depth' : max_depth,
+        'best threshold' : thresholds[np.argmax(f1_scores)],
+        'best F1-score' : np.max(f1_scores),
+        'auc' : np.trapz(tpr, fpr)
+    }
+
+    grid.append(_dict)
+ 
+ pd.DataFrame(grid)
+ 
+ # eta = 0.05, num_boost_round = 1000
+ 
+ grid = []
+
+for max_depth in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:    
+    params = {'max_depth' : max_depth,
+             'eta' : 0.05, 
+             'objective' : 'binary:logistic',
+             'eval_metric' : 'logloss',
+             'early_stoppings' : 50 }
+    
+    xgb_model = xgb.train(params = params, dtrain = dtrain, num_boost_round = 1000, evals = wlist)
+    xgb_model_predict = xgb_model.predict(dtest)
+    
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, xgb_model_predict)
+    precision, recall, thresholds = precision_recall_curve(y_test, xgb_model_predict)
+    f1_scores = 2*recall*precision/(recall+precision)
+    
+    
+    _dict = {
+        'max_depth' : max_depth,
+        'best threshold' : thresholds[np.argmax(f1_scores)],
+        'best F1-score' : np.max(f1_scores),
+        'auc' : np.trapz(tpr, fpr)
+    }
+
+    grid.append(_dict)
+    
+ pd.DataFrame(grid)
+ 
+ # eta = 0.1, num_boost_round = 1000
+ 
+ grid = []
+
+for max_depth in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:    
+    params = {'max_depth' : max_depth,
+             'eta' : 0.1, 
+             'objective' : 'binary:logistic',
+             'eval_metric' : 'logloss',
+             'early_stoppings' : 50 }
+    
+    xgb_model = xgb.train(params = params, dtrain = dtrain, num_boost_round = 1000, evals = wlist)
+    xgb_model_predict = xgb_model.predict(dtest)
+    
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, xgb_model_predict)
+    precision, recall, thresholds = precision_recall_curve(y_test, xgb_model_predict)
+    f1_scores = 2*recall*precision/(recall+precision)
+    
+    
+    _dict = {
+        'max_depth' : max_depth,
+        'best threshold' : thresholds[np.argmax(f1_scores)],
+        'best F1-score' : np.max(f1_scores),
+        'auc' : np.trapz(tpr, fpr)
+    }
+
+    grid.append(_dict)
+    
+ pd.DataFrame(grid)
+ 
+ # eta = 0.15, num_boost_round = 1000
+ 
+ grid = []
+
+for max_depth in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:    
+    params = {'max_depth' : max_depth,
+             'eta' : 0.15, 
+             'objective' : 'binary:logistic',
+             'eval_metric' : 'logloss',
+             'early_stoppings' : 50 }
+    
+    xgb_model = xgb.train(params = params, dtrain = dtrain, num_boost_round = 1000, evals = wlist)
+    xgb_model_predict = xgb_model.predict(dtest)
+    
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, xgb_model_predict)
+    precision, recall, thresholds = precision_recall_curve(y_test, xgb_model_predict)
+    f1_scores = 2*recall*precision/(recall+precision)
+    
+    
+    _dict = {
+        'max_depth' : max_depth,
+        'best threshold' : thresholds[np.argmax(f1_scores)],
+        'best F1-score' : np.max(f1_scores),
+        'auc' : np.trapz(tpr, fpr)
+    }
+
+    grid.append(_dict)
+    
+pd.DataFrame(grid)
+
+# eta = 0.2, num_boost_round = 1000
+
+grid = []
+
+for max_depth in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:    
+    params = {'max_depth' : max_depth,
+             'eta' : 0.2, 
+             'objective' : 'binary:logistic',
+             'eval_metric' : 'logloss',
+             'early_stoppings' : 50 }
+    
+    xgb_model = xgb.train(params = params, dtrain = dtrain, num_boost_round = 1000, evals = wlist)
+    xgb_model_predict = xgb_model.predict(dtest)
+    
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, xgb_model_predict)
+    precision, recall, thresholds = precision_recall_curve(y_test, xgb_model_predict)
+    
+    f1_scores = 2*recall*precision/(recall+precision)
+    
+    
+    _dict = {
+        'max_depth' : max_depth,
+        'best threshold' : thresholds[np.argmax(f1_scores)],
+        'best F1-score' : np.max(f1_scores),
+        'auc' : np.trapz(tpr, fpr)
+    }
+
+    grid.append(_dict)
+    
+pd.DataFrame(grid)
+
+#max_depth = 7 이 무난해 보임. 
+~~~
+
+##### k_fold cross validation
+> 13_9_K-Fold Cross Validation.ipynb
+~~~python
+import pandas as pd
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score, roc_auc_score, roc_curve, precision_recall_curve
+
+import matplotlib.pyplot as plt
+
+# 개별 feature PCA 한 데이터 가져오기
+
+x_scaled = pd.read_csv('x_scaled_with_pca.csv가 저장되어 있는 경로', encoding = 'cp949')
+
+# target 가져오기
+
+model_data = pd.read_csv('model_data.csv가 저장되어 있는 경로', encoding = 'cp949', thousands = ',')
+
+model_data.drop(['corp_code', 'corp_name'], axis = 1, inplace = True)
+y_data = model_data['도산']
+
+## Stratified K-Fold CV
+from sklearn.model_selection import StratifiedKFold
+from imblearn.over_sampling import SMOTE
+from sklearn.ensemble import VotingClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn import svm
+from sklearn import tree
+from sklearn.neighbors import KNeighborsClassifier
+
+import xgboost as xgb
+
+from sklearn.ensemble import RandomForestClassifier
+
+smote = SMOTE(sampling_strategy = 1, k_neighbors = 5)
+
+# 10-Fold CV
+
+cv = StratifiedKFold(n_splits = 10)
+
+SVM = []
+Voting = []
+Random_Forest = []
+XGBoost_1 = []
+XGBoost_2 = []
+
+for train_idx, test_idx in cv.split(x_scaled, y_data):
+    
+    # K-Fold 분할
+    x_train, y_train = x_scaled.iloc[train_idx], y_data[train_idx]
+    x_test, y_test = x_scaled.iloc[test_idx], y_data[test_idx]
+    
+    
+    # 분할된 train set에 smote로 증강
+    x_train_r, y_train_r = smote.fit_resample(x_train, y_train)
+
+    
+    
+    ## 1. SVM : 개별 분류기 중 가장 강력했던 모형
+    # 기존 최적화했던 하이퍼 파라미터 적용
+    
+    
+    svm_clf = svm.SVC(kernel = 'rbf', C = 1, probability = True)
+    
+    svm_clf.fit(x_train_r, y_train_r)
+    y_pred = svm_clf.predict_proba(x_test)[: , 1]
+    
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+    precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+    
+    f1_scores = 2*recall*precision/(recall+precision)
+    
+    _dict = {
+        'best threshold' : thresholds[np.argmax(f1_scores)],
+        'best F1-score' : np.max(f1_scores),
+        'auc' : np.trapz(tpr, fpr)
+    }
+    
+    SVM.append(_dict)
+    
+    
+    ## 2. Voting
+    # 기존 최적화했던 하이퍼 파라미터 적용
+
+    lr_clf = LogisticRegression()
+    svm_clf = svm.SVC(kernel = 'rbf', C = 1, probability = True)
+    dt_clf = tree.DecisionTreeClassifier(max_depth = 6)
+    knn_clf = KNeighborsClassifier(35)
+    
+    
+    svot_clf = VotingClassifier(estimators = [('Logistic', lr_clf), ('SVM', svm_clf), ('DT', dt_clf), ('kNN', knn_clf)],
+                                voting = 'soft')
+    
+    
+    svot_clf.fit(x_train_r, y_train_r)
+    y_pred = svot_clf.predict_proba(x_test)[: , 1]
+    
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+    precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+    
+    f1_scores = 2*recall*precision/(recall+precision)
+    
+    _dict = {
+        'best threshold' : thresholds[np.argmax(f1_scores)],
+        'best F1-score' : np.max(f1_scores),
+        'auc' : np.trapz(tpr, fpr)
+    }
+    
+    Voting.append(_dict)
+    
+    
+    
+    ## 3. Random Forest
+    # 기존 최적화했던 하이퍼 파라미터 적용
+    
+    rf_clf = RandomForestClassifier(n_estimators = 1000,
+                                    max_depth = 20,
+                                    max_features = 'auto',
+                                    n_jobs = -1,
+                                    verbose = 1)
+    
+    
+    rf_clf.fit(x_train_r, y_train_r)
+    y_pred = rf_clf.predict_proba(x_test)[: , 1]
+    
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+    precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+    
+    f1_scores = 2*recall*precision/(recall+precision)
+    
+    _dict = {
+        'best threshold' : thresholds[np.argmax(f1_scores)],
+        'best F1-score' : np.max(f1_scores),
+        'auc' : np.trapz(tpr, fpr)
+    }
+    
+    Random_Forest.append(_dict)
+    
+    
+    ## 4. XGBoost - 1
+    # 기존 최적화했던 하이퍼 파라미터 적용
+    
+    dtrain = xgb.DMatrix(data = x_train_r, label = y_train_r)
+    dtest = xgb.DMatrix(data = x_test, label = y_test)
+    
+    params = {'max_depth' : 7,
+             'eta' : 0.15, 
+             'objective' : 'binary:logistic',
+             'eval_metric' : 'logloss',
+             'early_stoppings' : 50 }
+    
+    wlist = [(dtrain, 'train'), (dtest, 'eval')]
+    
+    xgb_model = xgb.train(params = params, dtrain = dtrain, num_boost_round = 500, evals = wlist)
+    
+    y_pred = xgb_model.predict(dtest)
+    
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+    precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+    
+    f1_scores = 2*recall*precision/(recall+precision)
+    
+    _dict = {
+        'best threshold' : thresholds[np.argmax(f1_scores)],
+        'best F1-score' : np.max(f1_scores),
+        'auc' : np.trapz(tpr, fpr)
+    }
+    
+    XGBoost_1.append(_dict)
+    
+    
+    ## 5. XGBoost - 2
+    # 기존 최적화했던 하이퍼 파라미터 적용
+    
+    dtrain = xgb.DMatrix(data = x_train_r, label = y_train_r)
+    dtest = xgb.DMatrix(data = x_test, label = y_test)
+    
+    params = {'max_depth' : 7,
+             'eta' : 0.15, 
+             'objective' : 'binary:logistic',
+             'eval_metric' : 'logloss',
+             'early_stoppings' : 50 }
+    
+    wlist = [(dtrain, 'train'), (dtest, 'eval')]
+    
+    xgb_model = xgb.train(params = params, dtrain = dtrain, num_boost_round = 1000, evals = wlist)
+    
+    y_pred = xgb_model.predict(dtest)
+    
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred)
+    precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
+    
+    f1_scores = 2*recall*precision/(recall+precision)
+    
+    _dict = {
+        'best threshold' : thresholds[np.argmax(f1_scores)],
+        'best F1-score' : np.max(f1_scores),
+        'auc' : np.trapz(tpr, fpr)
+    }
+    
+    XGBoost_2.append(_dict)
+    
+df_SVM = pd.DataFrame(SVM)
+df_Voting = pd.DataFrame(Voting)
+df_Random_Forest = pd.DataFrame(Random_Forest)
+df_XGBoost_1 = pd.DataFrame(XGBoost_1)
+df_XGBoost_2 = pd.DataFrame(XGBoost_2)
+
+dict_SVM = {
+    'mean_AUC' : df_SVM['auc'].mean(),
+    'mean_Best_threshold' : df_SVM['best threshold'].mean(),
+    'mean_Best_F1_score' : df_SVM['best F1-score'].mean()
+}
+
+dict_Voting = {
+    'mean_AUC' : df_Voting['auc'].mean(),
+    'mean_Best_threshold' : df_Voting['best threshold'].mean(),
+    'mean_Best_F1_score' : df_Voting['best F1-score'].mean()
+}
+
+dict_Random_Forest = {
+    'mean_AUC' : df_Random_Forest['auc'].mean(),
+    'mean_Best_threshold' : df_Random_Forest['best threshold'].mean(),
+    'mean_Best_F1_score' : df_Random_Forest['best F1-score'].mean()
+}
+
+dict_XGBoost_1 = {
+    'mean_AUC' : df_XGBoost_1['auc'].mean(),
+    'mean_Best_threshold' : df_XGBoost_1['best threshold'].mean(),
+    'mean_Best_F1_score' : df_XGBoost_1['best F1-score'].mean()
+}
+
+dict_XGBoost_2 = {
+    'mean_AUC' : df_XGBoost_2['auc'].mean(),
+    'mean_Best_threshold' : df_XGBoost_2['best threshold'].mean(),
+    'mean_Best_F1_score' : df_XGBoost_2['best F1-score'].mean()
+}
+
+Table = [dict_SVM, dict_Voting, dict_Random_Forest, dict_XGBoost_1, dict_XGBoost_2]
+df_Table = pd.DataFrame(Table)
+df_Table.index = ['SVM', 'Voting', 'Random_Forest', 'XGBoost_1', 'XGBoost_2']
+
+df_Table.to_csv('K-Fold Cross Validation with 5 candidate models.csv', encoding = 'cp949')
 ~~~
