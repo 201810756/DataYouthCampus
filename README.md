@@ -34,6 +34,7 @@
     * [3-1-7. 앙상블_랜덤 포레스트](#앙상블_랜덤-포레스트)
     * [3-1-8. 앙상블_xgboost](#앙상블_xgboost)
     * [3-1-9. k_fold cross validation](k_fold-cross-validation)
+    
 
 
 ## 데이터 수집
@@ -2667,6 +2668,7 @@ pd.DataFrame(grid)
 
 #max_depth = 7 이 무난해 보임. 
 ~~~
+
 
 ##### k_fold cross validation
 > 13_9_K-Fold Cross Validation.ipynb
