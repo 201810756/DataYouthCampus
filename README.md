@@ -1325,6 +1325,7 @@ data6=pd.read_csv("final_data_인천부산울산.csv",encoding='cp949')
 integrated_data=pd.concat([data1,data2,data3,data4,data5,data6],axis=0)
 integrated_data.to_csv("final_data_전국.csv",encoding="cp949",index=False)
 ~~~
+
 #### 데이터 도산 여부 정의 및 sbhi 입력
 > 10_조건 걸어서 도산 여부 판단하기, 섹터별 SBHI 가져오기.ipynb
 1. 지역별 'final_data_(지역).csv'를 통합한 데이터를 활용
