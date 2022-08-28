@@ -48,6 +48,13 @@
   * [4-1. 법정동코드 가져오기](#법정동코드-가져오기)
   * [4-2. 좌표계 위치데이터 시각화](#좌표계-위치데이터-시각화)
   * [4-3. 비재무적 지표 파이그래프 및 feature 보정 전후 비교](#비재무적-지표-파이그래프-및-feature-보정-전후-비교)
+* [5. 테스트 데이터 전처리](#테스트-데이터-전처리)
+  * [5-1. 섹터별 sbhi 가져오기](#섹터별-sbhi-가져오기)
+  * [5-2. 테스트 데이터 수치변환 및 feature 선정](#테스트-데이터-수치변환-및-feature-선정)
+  * [5-3. 테스트 데이터 표준화 및 개별 pca](#테스트-데이터-표준화-및-개별-pca)
+* [6. 모델 테스트](#모델-테스트)
+  * [6-1. 테스트 데이터 활용 모델 테스트](#테스트-데이터-활용-모델-테스트)
+  * [6-2. 예측결과 비교](#예측결과-비교)
   
 ## 데이터 수집
 #### 국민연금 사업장 데이터와 기업코드 병합
@@ -4760,4 +4767,413 @@ plt.show()
 
 sns.kdeplot(data = model_data, x = model_data.columns[18], shade = True)
 plt.show()
+~~~
+
+
+## 테스트 데이터 전처리
+#### 섹터별 sbhi 가져오기
+> 16_0_섹터별 SBHI 가져오기.ipynb
+1. 테스트 데이터 섹터별로 [KBIZ 중소기업중앙회](https://www.kbiz.or.kr/ko/index/index.do)의 SBHI 점수 입력
+~~~python
+import pandas as pd
+import numpy as np
+
+# 최종적으로 변수선택하여 전 지역 통합한 데이터
+
+final_data = pd.read_csv('final_data_3.csv가 저장되어 있는 경로', encoding = 'cp949')
+
+##### 2. 섹터에 따라 SBHI 입력하기 #####
+
+list_sector = final_data['섹터']
+
+# 각 섹터의 SBHI를 딕셔너리로 대응
+
+sector_to_sbhi = {
+    '농업, 임업 및 어업' : 72.5, # 비제조업
+    '광업' : 72.5, # 비제조업
+    '식료품' : 85.5,
+    '음료' : 86.2,
+    '섬유제품' : 73.4,
+    '의복' : 73.1,
+    '가죽 및 신발' : 59.9,
+    '목재 및 나무제품' : 75.8,
+    '인쇄 및 기록매체' : 70.5,
+    '고무 및 플라스틱' : 73.3,
+    '가구' : 71.3,
+    '경공업 기타' : 76.4, # 경공업
+    '펄프 및 종이' : 83.3,
+    '화학제품' : 80.7,
+    '의약품' : 96.6,
+    '비금속광물' : 76.6,
+    '1차금속' : 83.5,
+    '금속가공' : 80.3,
+    '전자부품, 컴퓨터, 영상음향' : 88.0,
+    '의료, 정밀, 광학기기 및 시계' :84.2,
+    '전기장비' : 78.8,
+    '기계장비' : 82.5,
+    '자동차 및 트레일러' : 87.1,
+    '기타 운송장비' : 86.2,
+    '중공업 기타' : 76.4, # 중공업
+    '제조업 기타' : 80.7, # 제조업
+    '전기, 가스, 증기 및 공기 조절 공급업' : 72.5, # 비제조업
+    '수도, 하수 및 폐기물 처리, 원료 재생업' : 72.5, # 비제조업
+    '건설업' : 75.2,
+    '도매 및 소매업' : 72.1,
+    '운수 및 창고업' : 72.7,
+    '숙박 및 음식점업' : 53.4,
+    '정보통신업' : 82.1,
+    '금융 및 보험업' : 72.0, # 서비스업
+    '부동산업' : 68.2,
+    '전문, 과학 및 기술 서비스업' : 80.2,
+    '공공 행정, 국방 및 사회보장 행정' : 72.0, # 서비스업
+    '사업시설 관리, 사업 지원 및 임대 서비스업' : 72.8,
+    '교육 서비스업' : 70.5,
+    '보건업 및 사회복지 서비스업' : 72.0, # 서비스업
+    '예술, 스포츠 및 여가관련 서비스업' : 69.5,
+    '협회 및 단체, 수리 및 기타 개인 서비스업' : 66.6, 
+    '가구 내 고용활동 및 달리 분류되지 않은 자가 소비 생산활동' : 75.3,  # 전산업
+    '국제 및 외국기관' : 75.3,  # 전산업
+    '기타' :75.3
+}
+
+list_sbhi = []
+
+# 각 기업의 섹터에 대응되는 SBHI를 가져옴
+for corp_code, corp_name, sector in zip(list_corp_code, list_corp_name, list_sector):
+    
+    try:
+        sbhi = sector_to_sbhi[sector]
+    except:
+        sbhi = None
+    
+    each_sbhi = {
+        'corp_code' : corp_code,
+        'corp_name' : corp_name,
+        'SBHI' : sbhi
+    }
+    
+    list_sbhi.append(each_sbhi)
+
+df_sbhi = pd.DataFrame(list_sbhi)
+
+final_data['SBHI'] = df_sbhi['SBHI']
+
+final_data.to_csv('final_data_3.csv', encoding = 'cp949', index = False)
+~~~
+
+#### 테스트 데이터 수치변환 및 feature 선정
+> 16_0_수치변환하고 feature만 남기기.ipynb
+~~~python
+import pandas as pd
+import numpy as np
+
+final_data = pd.read_csv('final_data_3.csv가 저장되어 있는 경로', encoding = 'cp949', thousands = ',')
+
+model_data = final_data[['corp_code', 'corp_name']]
+
+# 1. 1인당 월 평균 납부하는 국민연금 금액, SBHI
+# 그대로 입력
+
+final_data.iloc[:, [9, 27]]
+
+model_data =  pd.concat([model_data, final_data.iloc[:, [9, 27]]], axis = 1)
+
+# 2. 주변 편의점 개수, 정류장 개수, 연간 이직율, 존속연수
+# 루트 처리
+
+final_data.iloc[:, [7, 8, 10, 11]]
+
+def sqrt_revision(x):
+    if x < 0:
+        x = -np.sqrt(abs(x))
+    
+    else:
+        x = np.sqrt(x)
+    
+    return(x)
+
+for num in [7, 8, 10, 11]:
+    model_data = pd.concat([model_data, final_data.iloc[:, num].apply(sqrt_revision)], axis = 1)
+
+# 3. 부채비율을 제외한 재무비율
+# 양수의 경우 : 해당 값과 제 99 분위수 중 작은 값의 루트값
+# 음수의 경우 : 해당 값과 제 1 분위수 중 큰 값의 절댓값의 루트값의 음수
+
+def sqrt_revision(x):
+    if x < 0:
+        x = -np.sqrt(abs(max(x, lower_quantile)))
+    
+    else:
+        x = np.sqrt(min(x, upper_quantile))
+    
+    return(x)
+
+for num in [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 23, 24]:
+    
+    upper_quantile = final_data.iloc[:, num].quantile(0.99)
+    lower_quantile = final_data.iloc[:, num].quantile(0.01)
+    
+    model_data = pd.concat([model_data, final_data.iloc[:, num].apply(sqrt_revision)], axis = 1)
+
+# 4. 부채비율
+# 양수의 경우 해당 값과 제 99 분위수 중 작은 값의 루트값
+# 음수의 경우 제 99 분위수의 루트값
+
+def sqrt_limit_revision(x):
+    if x <= 0:
+        x = np.sqrt(upper_quantile)
+    
+    else:
+        x = np.sqrt(min(x, upper_quantile))
+    
+    return(x)
+
+upper_quantile = final_data.iloc[:, 22].quantile(0.99)
+
+final_data.iloc[:, 22].apply(sqrt_limit_revision)
+
+model_data = pd.concat([model_data, final_data.iloc[:, 22].apply(sqrt_limit_revision)], axis = 1)
+
+test_data = model_data
+
+test_data.to_csv('test_data.csv', encoding = 'cp949', index = False)
+~~~
+
+#### 테스트 데이터 표준화 및 개별 pca
+> 16_1_2021년 데이터 표준화, 개별 PCA.ipynb
+~~~python
+import pandas as pd
+import numpy as np
+
+test_data = pd.read_csv('test_data.csv가 저장되어 있는 경로', encoding = 'cp949', thousands = ',')
+
+test_data.drop(['corp_code', 'corp_name'], axis = 1, inplace = True)
+
+# test_data.info()
+
+
+
+## 1. 데이터 표준화
+
+from sklearn.preprocessing import RobustScaler
+
+scaler = RobustScaler()
+
+test_scaled = pd.DataFrame(scaler.fit_transform(test_data))
+
+test_scaled.columns = test_data.columns
+
+test_scaled.to_csv('test_scaled.csv', encoding = 'cp949', index = False)
+
+from sklearn.decomposition import PCA
+
+# 1. 주변 편의점 개수 & 정류장 개수
+
+data_1 = test_scaled[['주변 편의점 개수', '정류장 개수']]
+
+pca = PCA(n_components = 2)
+
+pc_1 = pca.fit_transform(data_1)
+
+df_pc_1 = pd.DataFrame(data = pc_1)
+
+df_pc_1 = df_pc_1.iloc[:, 0]
+
+df_pc_1 = pd.DataFrame(df_pc_1)
+
+df_pc_1.columns = ['접근성 PC1']
+
+# 2. 순이익률, 영업이익률, 매출총이익률, 총자산이익률, 자본금이익률
+
+data_2 = test_scaled[['순이익률', '영업이익률', '매출총이익률', '총자산순이익률(ROA)', '자본금이익률(ROE)']]
+
+pca = PCA(n_components = 5)
+
+pc_2 = pca.fit_transform(data_2)
+
+df_pc_2 = pd.DataFrame(data = pc_2)
+
+df_pc_2 = df_pc_2.iloc[:, 0:2]
+
+df_pc_2.columns = ['수익성 PC1', '수익성 PC2']
+
+# 3. 영업이익증가율, 순이익증가율
+
+data_3 = test_scaled[['영업이익증가율', '순이익증가율']]
+
+pca = PCA(n_components = 2)
+
+pc_3 = pca.fit_transform(data_3)
+
+df_pc_3 = pd.DataFrame(data = pc_3)
+
+df_pc_3 = df_pc_3.iloc[:, 0]
+
+df_pc_3 = pd.DataFrame(df_pc_3)
+
+df_pc_3.columns = ['이익증가율 PC1']
+
+# 4. 총자본회전율, 자기자본회전율
+
+data_4 = test_scaled[['총자본회전율', '자기자본회전율']]
+
+pca = PCA(n_components = 2)
+
+pc_4 = pca.fit_transform(data_4)
+
+df_pc_4 = pd.DataFrame(data = pc_4)
+
+df_pc_4 = df_pc_4.iloc[:, 0]
+
+df_pc_4 = pd.DataFrame(df_pc_4)
+
+df_pc_4.columns = ['활동성 PC1']
+
+# 5. 유동성비율, 당좌비율
+
+data_5 = test_scaled[['유동성비율', '당좌비율']]
+
+pca = PCA(n_components = 2)
+
+pc_5 = pca.fit_transform(data_5)
+
+df_pc_5 = pd.DataFrame(data = pc_5)
+
+df_pc_5 = df_pc_5.iloc[:, 0]
+df_pc_5 = pd.DataFrame(df_pc_5)
+
+df_pc_5.columns = ['안정성 PC1']
+
+test_scaled = test_scaled.drop(['주변 편의점 개수', '정류장 개수', '순이익률', '영업이익률', '매출총이익률', '총자산순이익률(ROA)', '자본금이익률(ROE)', '영업이익증가율', '순이익증가율', '총자본회전율', '자기자본회전율', '유동성비율', '당좌비율'], axis = 1)
+
+test_scaled = pd.concat([test_scaled, df_pc_1, df_pc_2, df_pc_3, df_pc_4, df_pc_5], axis = 1)
+
+test_scaled.to_csv('test_scaled_with_pca.csv', encoding = 'cp949', index = False)
+~~~
+
+## 모델 테스트
+
+#### 테스트 데이터 활용 모델 테스트
+> 16_2_2021년 데이터 예측
+~~~python
+import pandas as pd
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score, roc_auc_score, roc_curve, precision_recall_curve
+
+import matplotlib.pyplot as plt
+
+# 2020년 개별 feature PCA + 스케일링 한 데이터 가져오기
+
+x_scaled = pd.read_csv('x_scaled_with_pca.csv가 저장되어 있는 경로', encoding = 'cp949')
+
+# target 가져오기
+
+model_data = pd.read_csv('model_data.csv가 저장되어 있는 경로', encoding = 'cp949', thousands = ',')
+
+model_data.drop(['corp_code', 'corp_name'], axis = 1, inplace = True)
+
+y_data = model_data['도산']
+
+
+
+# 2020년 재무 데이터만
+
+fin_scaled = x_scaled.drop(['1인당 월 평균 납부하는 국민연금 금액', 'SBHI', '연간 이직율', '존속연수', '접근성 PC1'], axis = 1)
+
+# 2021년 개별 feature PCA + 스케일링 한 데이터 가져오기
+
+test_scaled = pd.read_csv('test_scaled_with_pca.csv가 저장되어 있는 경로', encoding = 'cp949')
+
+# test_scaled.info()
+
+# 2021년 재무 데이터만
+
+fin_test_scaled = test_scaled.drop(['1인당 월 평균 납부하는 국민연금 금액', 'SBHI', '연간 이직율', '존속연수', '접근성 PC1'], axis = 1)
+
+from sklearn.ensemble import RandomForestClassifier
+
+## 1. 재무 + 비재무 결합 모형
+
+# 2020년 데이터로 모형 학습
+
+rf_clf = RandomForestClassifier(n_estimators = 1000,
+                                    max_depth = 20,
+                                    max_features = 'auto',
+                                    verbose = 1,
+                                    n_jobs = -1)
+    
+rf_clf.fit(x_scaled, y_data)
+
+
+# 2021년 데이터 예측
+
+combined_pred = rf_clf.predict_proba(test_scaled)[:, 1]
+
+
+## 2. 재무 단일 모형
+
+rf_clf = RandomForestClassifier(n_estimators = 1000,
+                                    max_depth = 25,
+                                    max_features = 'auto',
+                                    verbose = 1,
+                                    n_jobs = -1)
+    
+rf_clf.fit(fin_scaled, y_data)
+
+fin_pred = rf_clf.predict_proba(fin_test_scaled)[:, 1]
+
+
+# 원본 feature가 들어 있는 2021년 final_data_3에 붙여넣기
+
+final_data = pd.read_csv('final_data_3.csv가 저장되어 있는 경로', encoding = 'cp949')
+final_data['combined_pred'] = combined_pred
+final_data['fin_pred'] = fin_pred
+final_data['difference'] = final_data['combined_pred'] - final_data['fin_pred']
+final_data.to_csv('final_data_with_difference.csv', encoding = 'cp949', index = False)
+~~~
+
+#### 예측결과 비교
+> 16_3_예측결과 비교.ipynb
+~~~python
+import pandas as pd
+
+test_data = pd.read_csv('final_data_with_difference.csv가 저장되어 있는 경로', encoding = 'cp949')
+
+test_data['difference']
+
+# 도산 예측확률이 결합 모형에서 재무 모형대비 5%p 이상 상승
+
+pos_dif = test_data['difference'] > 0.05
+
+# 도산 예측확률이 결합 모형에서 재무 모형대비 5%p 이상 하락
+
+neg_dif = test_data['difference'] < -0.05
+
+Pos = {
+    'SBHI' : test_data.loc[pos_dif]['SBHI'].mean(),
+    '주변 편의점 개수' : test_data.loc[pos_dif]['주변 편의점 개수'].mean(),
+    '정류장 개수' : test_data.loc[pos_dif]['정류장 개수'].mean(),
+    '연간 이직율' : test_data.loc[pos_dif]['연간 이직율'].mean(),
+    '1인당 월 평균 납부하는 국민연금 금액' : test_data.loc[pos_dif]['1인당 월 평균 납부하는 국민연금 금액'].mean()
+}
+
+Neg = {
+    'SBHI' : test_data.loc[neg_dif]['SBHI'].mean(),
+    '주변 편의점 개수' : test_data.loc[neg_dif]['주변 편의점 개수'].mean(),
+    '정류장 개수' : test_data.loc[neg_dif]['정류장 개수'].mean(),
+    '연간 이직율' : test_data.loc[neg_dif]['연간 이직율'].mean(),
+    '1인당 월 평균 납부하는 국민연금 금액' : test_data.loc[neg_dif]['1인당 월 평균 납부하는 국민연금 금액'].mean()
+}
+
+list_mean = [Pos, Neg]
+
+df_mean = pd.DataFrame(list_mean)
+
+df_mean.index = ['5%p 이상 상승', '5%p 이상 하락']
+
+df_mean
 ~~~
