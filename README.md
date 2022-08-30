@@ -5154,27 +5154,57 @@ pos_dif = test_data['difference'] > 0.05
 
 neg_dif = test_data['difference'] < -0.05
 
+from scipy import stats
+
+# SBHI
+
+t_stat, p_val_1 = stats.ttest_ind(test_data.loc[pos_dif]['SBHI'], test_data.loc[neg_dif]['SBHI'], equal_var = True, alternative = 'two-sided')
+
+# 주변 편의점 개수
+
+t_stat, p_val_2 = stats.ttest_ind(test_data.loc[pos_dif]['주변 편의점 개수'], test_data.loc[neg_dif]['주변 편의점 개수'], equal_var = True, alternative = 'two-sided')
+
+# 정류장 개수
+
+t_stat, p_val_3 = stats.ttest_ind(test_data.loc[pos_dif]['정류장 개수'], test_data.loc[neg_dif]['정류장 개수'], equal_var = True, alternative = 'two-sided')
+
+# 연간 이직률
+
+t_stat, p_val_4 = stats.ttest_ind(test_data.loc[pos_dif]['연간 이직율'], test_data.loc[neg_dif]['연간 이직율'], equal_var = True, alternative = 'two-sided')
+
+# 국민연금 납부금액
+
+t_stat, p_val_5 = stats.ttest_ind(test_data.loc[pos_dif]['1인당 월 평균 납부하는 국민연금 금액'], test_data.loc[neg_dif]['1인당 월 평균 납부하는 국민연금 금액'], equal_var = True, alternative = 'two-sided')
+
 Pos = {
-    'SBHI' : test_data.loc[pos_dif]['SBHI'].mean(),
-    '주변 편의점 개수' : test_data.loc[pos_dif]['주변 편의점 개수'].mean(),
-    '정류장 개수' : test_data.loc[pos_dif]['정류장 개수'].mean(),
-    '연간 이직율' : test_data.loc[pos_dif]['연간 이직율'].mean(),
-    '1인당 월 평균 납부하는 국민연금 금액' : test_data.loc[pos_dif]['1인당 월 평균 납부하는 국민연금 금액'].mean()
+    'SBHI' : round(test_data.loc[pos_dif]['SBHI'].mean(), 3),
+    '주변 편의점 개수' : round(test_data.loc[pos_dif]['주변 편의점 개수'].mean(), 3),
+    '정류장 개수' : round(test_data.loc[pos_dif]['정류장 개수'].mean(), 3),
+    '연간 이직율' : round(test_data.loc[pos_dif]['연간 이직율'].mean(), 3),
+    '1인당 월 평균 납부하는 국민연금 금액' : round(test_data.loc[pos_dif]['1인당 월 평균 납부하는 국민연금 금액'].mean())
 }
 
 Neg = {
-    'SBHI' : test_data.loc[neg_dif]['SBHI'].mean(),
-    '주변 편의점 개수' : test_data.loc[neg_dif]['주변 편의점 개수'].mean(),
-    '정류장 개수' : test_data.loc[neg_dif]['정류장 개수'].mean(),
-    '연간 이직율' : test_data.loc[neg_dif]['연간 이직율'].mean(),
-    '1인당 월 평균 납부하는 국민연금 금액' : test_data.loc[neg_dif]['1인당 월 평균 납부하는 국민연금 금액'].mean()
+    'SBHI' : round(test_data.loc[neg_dif]['SBHI'].mean(), 3),
+    '주변 편의점 개수' : round(test_data.loc[neg_dif]['주변 편의점 개수'].mean(), 3),
+    '정류장 개수' : round(test_data.loc[neg_dif]['정류장 개수'].mean(), 3),
+    '연간 이직율' : round(test_data.loc[neg_dif]['연간 이직율'].mean(), 3),
+    '1인당 월 평균 납부하는 국민연금 금액' : round(test_data.loc[neg_dif]['1인당 월 평균 납부하는 국민연금 금액'].mean())
 }
 
-list_mean = [Pos, Neg]
+t_test = {
+    'SBHI' : round(p_val_1, 3),
+    '주변 편의점 개수' : round(p_val_2, 3),
+    '정류장 개수' : round(p_val_3, 3),
+    '연간 이직율' : round(p_val_4, 3),
+    '1인당 월 평균 납부하는 국민연금 금액' : round(p_val_5, 3)
+}
+
+list_mean = [Pos, Neg, t_test]
 
 df_mean = pd.DataFrame(list_mean)
 
-df_mean.index = ['5%p 이상 상승', '5%p 이상 하락']
+df_mean.index = ['대조모형 대비 5%p 이상 상승', '대조모형 대비 5%p 이상 하락', 't-test']
 
 df_mean
 ~~~
